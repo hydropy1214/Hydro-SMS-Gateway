@@ -67,11 +67,11 @@ export async function enqueueMessages(campaignId: number): Promise<void> {
       }
     }
 
-    // Batch-update assigned messages
+    // Batch-update assigned messages — record assignedAt so recovery uses accurate timing
     for (const { messageId, deviceId } of assignments) {
       await db
         .update(messagesTable)
-        .set({ status: "ASSIGNED", deviceId })
+        .set({ status: "ASSIGNED", deviceId, assignedAt: new Date() })
         .where(eq(messagesTable.id, messageId));
     }
 
@@ -84,8 +84,44 @@ export async function enqueueMessages(campaignId: number): Promise<void> {
   }
 }
 
+/**
+ * Requeue messages stuck in ASSIGNED state for too long (device dropped without result).
+ * After ASSIGNED_TIMEOUT_MS, the message is reset to QUEUED so the scheduler can retry.
+ */
+const ASSIGNED_TIMEOUT_MS = 5 * 60 * 1000; // 5 minutes
+
+async function recoverStuckMessages(): Promise<void> {
+  try {
+    const cutoff = new Date(Date.now() - ASSIGNED_TIMEOUT_MS);
+    // Use assignedAt (not createdAt) so recently-assigned in-flight messages are never touched
+    const stuck = await db
+      .select({ id: messagesTable.id })
+      .from(messagesTable)
+      .where(
+        and(
+          eq(messagesTable.status, "ASSIGNED"),
+          sql`${messagesTable.assignedAt} IS NOT NULL`,
+          sql`${messagesTable.assignedAt} < ${cutoff.toISOString()}`,
+        ),
+      );
+
+    if (stuck.length === 0) return;
+
+    const ids = stuck.map((m) => m.id);
+    await db
+      .update(messagesTable)
+      .set({ status: "QUEUED", deviceId: null, assignedAt: null })
+      .where(inArray(messagesTable.id, ids));
+
+    logger.info({ recovered: stuck.length }, "Requeued stuck ASSIGNED messages");
+  } catch (err) {
+    logger.error({ err }, "Error recovering stuck messages");
+  }
+}
+
 /** Periodically try to dispatch queued messages for running campaigns */
 export function startScheduler(): void {
+  // Dispatch queued messages every 10 seconds
   setInterval(async () => {
     try {
       const running = await db
@@ -100,4 +136,7 @@ export function startScheduler(): void {
       // scheduler silently retries
     }
   }, 10_000);
+
+  // Recover stuck ASSIGNED messages every 2 minutes
+  setInterval(recoverStuckMessages, 2 * 60 * 1000);
 }

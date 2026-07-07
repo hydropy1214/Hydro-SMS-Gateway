@@ -34,6 +34,7 @@ export const messagesTable = pgTable("messages", {
   status: messageStatusEnum("status").notNull().default("CREATED"),
   failureReason: text("failure_reason"),
   createdAt: timestamp("created_at").notNull().defaultNow(),
+  assignedAt: timestamp("assigned_at"),
   sentAt: timestamp("sent_at"),
 });
 

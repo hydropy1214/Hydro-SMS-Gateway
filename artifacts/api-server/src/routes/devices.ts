@@ -1,4 +1,4 @@
-import { Router } from "express";
+import { Router, type Request } from "express";
 import { db, devicesTable, simCardsTable } from "@workspace/db";
 import { eq, and, sql } from "drizzle-orm";
 import { z } from "zod";
@@ -12,12 +12,25 @@ function generateDeviceToken(): string {
   return crypto.randomBytes(24).toString("hex");
 }
 
-function buildQrData(deviceId: number, token: string): string {
-  const domain = process.env.REPLIT_DEV_DOMAIN;
-  const fallback = process.env.SERVER_URL ?? "http://localhost:3000";
-  // Use https:// base URL only — the gateway app appends /api/ws itself
-  const serverUrl = domain ? `https://${domain}` : fallback;
-  return JSON.stringify({ serverUrl, deviceId, token });
+function buildQrData(req: Request, deviceId: number, token: string): string {
+  // Priority order (most trusted first):
+  // 1. SERVER_URL env var — set this in production for a canonical origin
+  // 2. REPLIT_DEV_DOMAIN — auto-set by Replit in development
+  // 3. Request host header — last resort; only used if nothing else is configured
+  if (process.env.SERVER_URL) {
+    const base = process.env.SERVER_URL.replace(/\/$/, "");
+    return JSON.stringify({ serverUrl: base, deviceId, token });
+  }
+  const devDomain = process.env.REPLIT_DEV_DOMAIN;
+  if (devDomain) {
+    return JSON.stringify({ serverUrl: `https://${devDomain}`, deviceId, token });
+  }
+  // Fallback: derive from request — reliable only behind a trusted reverse proxy
+  const host = (req.headers["x-forwarded-host"] || req.headers.host) as string;
+  const proto = ((req.headers["x-forwarded-proto"] as string) ?? "https")
+    .split(",")[0]
+    .trim();
+  return JSON.stringify({ serverUrl: `${proto}://${host}`, deviceId, token });
 }
 
 /** GET /api/devices */
@@ -53,7 +66,7 @@ router.post("/devices", requireAuth, async (req, res) => {
     })
     .returning();
 
-  res.status(201).json({ ...device, qrData: buildQrData(device.id, token) });
+  res.status(201).json({ ...device, qrData: buildQrData(req, device.id, token) });
 });
 
 /** GET /api/devices/:deviceId */
@@ -120,7 +133,7 @@ router.get("/devices/:deviceId/qr", requireAuth, async (req, res) => {
       .where(eq(devicesTable.id, deviceId));
   }
 
-  res.json({ deviceId, qrData: buildQrData(deviceId, token), token });
+  res.json({ deviceId, qrData: buildQrData(req, deviceId, token), token });
 });
 
 /** GET /api/devices/:deviceId/simcards */

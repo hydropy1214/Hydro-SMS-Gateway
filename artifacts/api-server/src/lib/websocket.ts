@@ -107,63 +107,71 @@ async function handleDeviceMessage(deviceId: number, raw: string): Promise<void>
     const messageId = typeof msg.messageId === "number" ? msg.messageId : undefined;
     if (!messageId) return;
 
-    const status = msg.status === "SENT" ? "SENT" as const : "FAILED" as const;
+    const newStatus = msg.status === "SENT" ? "SENT" as const : "FAILED" as const;
     const failureReason =
-      status === "FAILED" && typeof msg.reason === "string" ? msg.reason : null;
+      newStatus === "FAILED" && typeof msg.reason === "string" ? msg.reason : null;
 
-    await db
+    // Idempotent update: only accept the result if the message is still ASSIGNED
+    // to THIS device. Prevents double-counting if recovery re-queued then a late
+    // result arrives, or if a different device reports for the same message ID.
+    const [updated] = await db
       .update(messagesTable)
       .set({
-        status,
+        status: newStatus,
         failureReason,
-        sentAt: status === "SENT" ? new Date() : undefined,
-        deviceId,
+        sentAt: newStatus === "SENT" ? new Date() : undefined,
+        assignedAt: null,
       })
-      .where(eq(messagesTable.id, messageId));
+      .where(
+        and(
+          eq(messagesTable.id, messageId),
+          eq(messagesTable.status, "ASSIGNED"),
+          eq(messagesTable.deviceId, deviceId),
+        ),
+      )
+      .returning({ campaignId: messagesTable.campaignId });
 
-    // Update campaign counters
-    const [message] = await db
-      .select({ campaignId: messagesTable.campaignId })
-      .from(messagesTable)
-      .where(eq(messagesTable.id, messageId))
+    // If no row was updated the result was stale/duplicate — skip counter update
+    if (!updated?.campaignId) {
+      logger.warn({ messageId, deviceId }, "Ignored stale or duplicate sms.result");
+      return;
+    }
+
+    const campaignId = updated.campaignId;
+
+    if (newStatus === "SENT") {
+      await db
+        .update(campaignsTable)
+        .set({ sent: sql`${campaignsTable.sent} + 1` })
+        .where(eq(campaignsTable.id, campaignId));
+    } else {
+      await db
+        .update(campaignsTable)
+        .set({ failed: sql`${campaignsTable.failed} + 1` })
+        .where(eq(campaignsTable.id, campaignId));
+    }
+
+    // Check completion
+    const [campaign] = await db
+      .select()
+      .from(campaignsTable)
+      .where(eq(campaignsTable.id, campaignId))
       .limit(1);
 
-    if (message?.campaignId) {
-      const campaignId = message.campaignId;
-      if (status === "SENT") {
-        await db
-          .update(campaignsTable)
-          .set({ sent: sql`${campaignsTable.sent} + 1` })
-          .where(eq(campaignsTable.id, campaignId));
-      } else {
-        await db
-          .update(campaignsTable)
-          .set({ failed: sql`${campaignsTable.failed} + 1` })
-          .where(eq(campaignsTable.id, campaignId));
-      }
-
-      // Check completion
-      const [campaign] = await db
-        .select()
-        .from(campaignsTable)
-        .where(eq(campaignsTable.id, campaignId))
-        .limit(1);
-
-      if (
-        campaign &&
-        campaign.totalMessages > 0 &&
-        campaign.sent + campaign.failed >= campaign.totalMessages
-      ) {
-        await db
-          .update(campaignsTable)
-          .set({ status: "COMPLETED" })
-          .where(eq(campaignsTable.id, campaignId));
-        broadcast({ type: "campaign.completed", campaignId });
-      }
+    if (
+      campaign &&
+      campaign.totalMessages > 0 &&
+      campaign.sent + campaign.failed >= campaign.totalMessages
+    ) {
+      await db
+        .update(campaignsTable)
+        .set({ status: "COMPLETED" })
+        .where(eq(campaignsTable.id, campaignId));
+      broadcast({ type: "campaign.completed", campaignId });
     }
 
     broadcast({
-      type: status === "SENT" ? "sms.sent" : "sms.failed",
+      type: newStatus === "SENT" ? "sms.sent" : "sms.failed",
       messageId,
       deviceId,
     });

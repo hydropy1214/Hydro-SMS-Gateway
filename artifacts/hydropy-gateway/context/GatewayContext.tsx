@@ -155,6 +155,9 @@ export function GatewayProvider({ children }: { children: React.ReactNode }) {
   const smsTasksRef = useRef<SmsTask[]>([]);
   // Set of messageIds currently being processed — prevents duplicate sends
   const processingRef = useRef<Set<number>>(new Set());
+  // Stable ref to processSmsTask so ws.onmessage auto-trigger doesn't capture stale closure
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const processSmsTaskRef = useRef<(messageId: number) => Promise<void>>(async () => {});
 
   // Keep configRef in sync
   useEffect(() => {
@@ -289,6 +292,8 @@ export function GatewayProvider({ children }: { children: React.ReactNode }) {
             smsTasksRef.current = next;
             return next;
           });
+          // Auto-process immediately — no manual tap required in production
+          setTimeout(() => processSmsTaskRef.current(msg.messageId!), 300);
         }
       };
 
@@ -441,6 +446,10 @@ export function GatewayProvider({ children }: { children: React.ReactNode }) {
     },
     [sendWs, addLog],
   );
+
+  // Keep processSmsTaskRef up-to-date so the ws.onmessage auto-trigger always calls
+  // the latest version without capturing a stale closure
+  processSmsTaskRef.current = processSmsTask;
 
   return (
     <GatewayContext.Provider
