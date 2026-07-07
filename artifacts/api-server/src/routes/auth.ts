@@ -18,13 +18,13 @@ router.post("/auth/login", async (req, res) => {
     return;
   }
 
-  const { email, password } = parsed.data as { email: string; password: string };
+  const { email, password } = parsed.data;
   const hash = hashPassword(password);
 
   const [user] = await db
     .select()
     .from(usersTable)
-    .where(eq(usersTable.email, String(email)))
+    .where(eq(usersTable.email, email))
     .limit(1);
 
   if (!user || user.passwordHash !== hash) {
@@ -32,7 +32,8 @@ router.post("/auth/login", async (req, res) => {
     return;
   }
 
-  const token = createSession(user.id);
+  // createSession is now async (persists to DB — survives server restarts)
+  const token = await createSession(user.id);
 
   res.json({
     user: {
@@ -46,10 +47,10 @@ router.post("/auth/login", async (req, res) => {
   });
 });
 
-router.post("/auth/logout", (req, res) => {
+router.post("/auth/logout", async (req, res) => {
   const authHeader = req.headers.authorization;
-  const token = authHeader?.replace("Bearer ", "") ?? "";
-  destroySession(token);
+  const token = authHeader?.replace("Bearer ", "").trim() ?? "";
+  if (token) await destroySession(token);
   res.json({ success: true, message: "Logged out" });
 });
 

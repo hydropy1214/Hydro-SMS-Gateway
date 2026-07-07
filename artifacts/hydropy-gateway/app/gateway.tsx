@@ -10,10 +10,13 @@ import {
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Feather } from '@expo/vector-icons';
+import type { ComponentProps } from 'react';
 import { useRouter } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import { useGateway, type ConnectionStatus, type LogEntry, type SmsTask } from '@/context/GatewayContext';
 import { useColors } from '@/hooks/useColors';
+
+type FeatherName = ComponentProps<typeof Feather>['name'];
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -64,10 +67,10 @@ const sb = StyleSheet.create({
 });
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-function MetricCard({ icon, label, value, sub, colors }: { icon: string; label: string; value: string; sub?: string; colors: any }) {
+function MetricCard({ icon, label, value, sub, colors }: { icon: FeatherName; label: string; value: string; sub?: string; colors: any }) {
   return (
     <View style={[mc.card, { backgroundColor: colors.card, borderColor: colors.border }]}>
-      <Feather name={icon as Parameters<typeof Feather>[0]['name']} size={16} color={colors.primary} />
+      <Feather name={icon} size={16} color={colors.primary} />
       <Text style={[mc.value, { color: colors.foreground, fontFamily: 'Inter_700Bold' }]}>{value}</Text>
       {sub ? (
         <Text style={[mc.sub, { color: colors.primary, fontFamily: 'Inter_400Regular' }]}>{sub}</Text>

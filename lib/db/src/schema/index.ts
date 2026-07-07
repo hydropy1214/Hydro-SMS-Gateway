@@ -1,4 +1,5 @@
 export * from "./users";
+export * from "./sessions";
 export * from "./devices";
 export * from "./simcards";
 export * from "./campaigns";

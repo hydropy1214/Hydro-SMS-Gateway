@@ -318,11 +318,52 @@ export default function Devices() {
                 )}
               </div>
 
+              {/* Manual-entry credentials */}
+              {qrData && (() => {
+                let parsed: { serverUrl?: string; token?: string; deviceId?: number } = {};
+                try { parsed = JSON.parse(qrData.qrData); } catch { /* ignore */ }
+                return (
+                  <div className="w-full space-y-2">
+                    <div className="text-[10px] font-mono text-muted-foreground uppercase tracking-wider">
+                      Manual Entry Credentials
+                    </div>
+                    {[
+                      { label: 'Server URL', value: parsed.serverUrl ?? '' },
+                      { label: 'Device ID', value: String(parsed.deviceId ?? '') },
+                      { label: 'Token', value: parsed.token ?? '' },
+                    ].map(({ label, value }) => (
+                      <div key={label} className="bg-muted/30 border border-border rounded-sm px-3 py-2">
+                        <div className="text-[9px] font-mono text-muted-foreground uppercase mb-0.5">{label}</div>
+                        <div className="flex items-center gap-2">
+                          <code className="text-[11px] font-mono text-primary break-all flex-1">{value}</code>
+                          <button
+                            onClick={() => navigator.clipboard.writeText(value)}
+                            className="flex-shrink-0 text-muted-foreground hover:text-primary transition-colors"
+                            title="Copy"
+                          >
+                            <RefreshCw className="w-3 h-3" style={{ display: 'none' }} />
+                            <Wifi className="w-3 h-3" style={{ display: 'none' }} />
+                            <WifiOff className="w-3 h-3" style={{ display: 'none' }} />
+                            📋
+                          </button>
+                        </div>
+                      </div>
+                    ))}
+                    <p className="text-[10px] font-mono text-muted-foreground leading-relaxed">
+                      In the Gateway app → MANUAL ENTRY → Paste JSON, copy this whole payload:
+                    </p>
+                    <code className="block text-[10px] font-mono text-primary break-all bg-muted/30 border border-border rounded-sm px-3 py-2">
+                      {qrData.qrData}
+                    </code>
+                  </div>
+                );
+              })()}
+
               {/* Security notice */}
               <div className="bg-amber-500/10 text-amber-400 border border-amber-500/20 p-3 flex items-start gap-3 rounded-sm w-full">
                 <ShieldAlert className="w-4 h-4 flex-shrink-0 mt-0.5" />
                 <p className="font-mono text-xs leading-relaxed">
-                  This QR contains a one-time auth token. Do not share it or screenshot it. It expires after first use.
+                  Keep this token private — it gives full device access. Generate a new QR if compromised.
                 </p>
               </div>
 
