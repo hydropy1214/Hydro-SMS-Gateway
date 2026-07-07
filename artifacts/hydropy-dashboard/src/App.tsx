@@ -17,6 +17,7 @@ import Campaigns from '@/pages/campaigns';
 import NewCampaign from '@/pages/campaign-new';
 import CampaignDetail from '@/pages/campaign-detail';
 import MessagesLog from '@/pages/messages';
+import GatewayApp from '@/pages/gateway-app';
 import Login from '@/pages/login';
 import NotFound from '@/pages/not-found';
 
@@ -82,6 +83,9 @@ function Router() {
         </Route>
         <Route path="/messages">
           {() => <ProtectedRoute component={MessagesLog} />}
+        </Route>
+        <Route path="/gateway-app">
+          {() => <ProtectedRoute component={GatewayApp} />}
         </Route>
         <Route component={NotFound} />
       </Switch>

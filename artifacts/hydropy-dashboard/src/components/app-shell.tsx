@@ -2,7 +2,7 @@ import React from 'react';
 import { Link, useLocation } from 'wouter';
 import { useAuth } from '@/contexts/auth-context';
 import { useLogout } from '@workspace/api-client-react';
-import { LayoutDashboard, Smartphone, Megaphone, MessageSquare, LogOut, TerminalSquare } from 'lucide-react';
+import { LayoutDashboard, Smartphone, Megaphone, MessageSquare, LogOut, TerminalSquare, Download } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
 export function AppShell({ children }: { children: React.ReactNode }) {
@@ -31,6 +31,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
     { href: '/devices', label: 'Fleet', icon: Smartphone },
     { href: '/campaigns', label: 'Campaigns', icon: Megaphone },
     { href: '/messages', label: 'Logs', icon: MessageSquare },
+    { href: '/gateway-app', label: 'Gateway App', icon: Download },
   ];
 
   return (
