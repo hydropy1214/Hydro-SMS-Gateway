@@ -2,3 +2,4 @@
 - [Hydropy WebSocket path](hydropy-ws-path.md) — WS server must use /api/ws (not /ws) so Replit proxy routes it to the api-server artifact correctly.
 - [Hydropy seeding](hydropy-seeding.md) — Default users (admin/operator) seeded via scripts/seed.ts; also run once via SQL at import time.
 - [Hydropy setup complete](hydropy-setup-complete.md) — DB pushed, seeded, both workflows running; all features built (WS hook, campaign actions, message clear, gateway portal, bulk delete route).
+- [Hydropy native SMS APK](hydropy-native-sms-apk.md) — two local Expo modules (native-sms, foreground-service) replace expo-sms; EAS Build produces release APK; key pitfalls: stop via stopService not startService, release locks before re-acquiring, all multipart parts must confirm before resolving.

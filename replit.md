@@ -20,6 +20,33 @@ A distributed SMS gateway management platform where Android phones act as SMS ga
 | Admin    | admin@hydropy.io        | admin123      |
 | Operator | operator@hydropy.io     | operator123   |
 
+## Building the Production APK
+
+The gateway requires native modules and must be built with EAS Build (not Expo Go).
+
+```bash
+cd artifacts/hydropy-gateway
+
+# One-time setup: install EAS CLI and log in
+pnpm add -g eas-cli
+eas login                   # requires an Expo account at expo.dev
+
+# Link this project to your Expo account (first time)
+eas init
+
+# Build a release APK (installs directly on Android, no Play Store)
+eas build --profile apk --platform android
+```
+
+After the build finishes EAS prints a download URL for the `.apk`. Install it on the Android device via `adb install <file>.apk` or transfer it directly.
+
+### What the native modules provide
+- **`@hydropy/native-sms`** — wraps Android `SmsManager` for silent automated SMS sending with no UI dialog; handles multipart messages (>160 chars) and reports per-part delivery via `PendingIntent`
+- **`@hydropy/foreground-service`** — runs a persistent foreground service with CPU + WiFi wake locks so the WebSocket stays alive when the screen is off; `START_STICKY` means Android auto-restarts it if it's killed
+
+### Permissions the APK requests
+`SEND_SMS`, `FOREGROUND_SERVICE`, `FOREGROUND_SERVICE_DATA_SYNC`, `WAKE_LOCK`, `ACCESS_WIFI_STATE`, `CHANGE_WIFI_STATE`, `CAMERA`
+
 ## Stack
 
 - pnpm workspaces, Node.js 24, TypeScript 5.9
@@ -29,6 +56,7 @@ A distributed SMS gateway management platform where Android phones act as SMS ga
 - Validation: Zod, `drizzle-zod`
 - API codegen: Orval (from OpenAPI spec)
 - Build: esbuild (CJS bundle)
+- Mobile: Expo 54 + React Native 0.81, EAS Build for production APK
 
 ## Architecture
 
@@ -55,10 +83,13 @@ PostgreSQL    WebSocket (/api/ws)
 - `artifacts/api-server/src/routes/` — Express route handlers
 - `artifacts/api-server/src/lib/` — Auth, WebSocket, Scheduler
 - `artifacts/hydropy-dashboard/src/` — React dashboard UI
-- `artifacts/hydropy-gateway/` — Expo mobile gateway app (Android/iOS)
+- `artifacts/hydropy-gateway/` — Expo mobile gateway app (Android only for production)
 - `artifacts/hydropy-gateway/context/GatewayContext.tsx` — WS connection, heartbeat, SMS dispatch
 - `artifacts/hydropy-gateway/app/setup.tsx` — QR scan + manual pairing screen
 - `artifacts/hydropy-gateway/app/gateway.tsx` — Live status dashboard screen
+- `artifacts/hydropy-gateway/modules/native-sms/` — Native Expo module: Android SmsManager wrapper
+- `artifacts/hydropy-gateway/modules/foreground-service/` — Native Expo module: foreground service + wake locks
+- `artifacts/hydropy-gateway/eas.json` — EAS Build profiles (apk / preview / production)
 
 ## Architecture decisions
 

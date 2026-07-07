@@ -22,7 +22,12 @@
     "android": {
       "permissions": [
         "CAMERA",
-        "SEND_SMS"
+        "SEND_SMS",
+        "FOREGROUND_SERVICE",
+        "FOREGROUND_SERVICE_DATA_SYNC",
+        "WAKE_LOCK",
+        "ACCESS_WIFI_STATE",
+        "CHANGE_WIFI_STATE"
       ]
     },
     "web": {
@@ -42,7 +47,8 @@
         {
           "cameraPermission": "Allow HYDROPY Gateway to access the camera to scan device QR codes."
         }
-      ]
+      ],
+      "./modules/foreground-service/app.plugin.js"
     ],
     "experiments": {
       "typedRoutes": true,

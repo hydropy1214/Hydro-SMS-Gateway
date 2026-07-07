@@ -1,0 +1,20 @@
+{
+  "name": "@hydropy/native-sms",
+  "version": "1.0.0",
+  "description": "Silent SmsManager native module for HYDROPY Gateway",
+  "main": "src/index.ts",
+  "peerDependencies": {
+    "expo-modules-core": "*"
+  },
+  "expo": {
+    "autolinking": {
+      "android": {
+        "sourceDir": "android",
+        "packageName": "expo.modules.nativesms"
+      },
+      "ios": {
+        "modulesClassNames": []
+      }
+    }
+  }
+}

@@ -1,0 +1,20 @@
+{
+  "name": "@hydropy/foreground-service",
+  "version": "1.0.0",
+  "description": "Foreground service with wake locks for HYDROPY Gateway",
+  "main": "src/index.ts",
+  "peerDependencies": {
+    "expo-modules-core": "*"
+  },
+  "expo": {
+    "autolinking": {
+      "android": {
+        "sourceDir": "android",
+        "packageName": "expo.modules.foregroundservice"
+      },
+      "ios": {
+        "modulesClassNames": []
+      }
+    }
+  }
+}

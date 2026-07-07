@@ -427,6 +427,12 @@ importers:
 
   artifacts/hydropy-gateway:
     dependencies:
+      '@hydropy/foreground-service':
+        specifier: file:./modules/foreground-service
+        version: file:artifacts/hydropy-gateway/modules/foreground-service(expo-modules-core@3.0.30(react-native@0.81.5(@babel/core@7.29.7)(@types/react@19.1.17)(react@19.1.0))(react@19.1.0))
+      '@hydropy/native-sms':
+        specifier: file:./modules/native-sms
+        version: file:artifacts/hydropy-gateway/modules/native-sms(expo-modules-core@3.0.30(react-native@0.81.5(@babel/core@7.29.7)(@types/react@19.1.17)(react@19.1.0))(react@19.1.0))
       expo-battery:
         specifier: ^10.0.8
         version: 10.0.8(expo@54.0.35)(react@19.1.0)
@@ -436,9 +442,9 @@ importers:
       expo-device:
         specifier: ^8.0.10
         version: 8.0.10(expo@54.0.35)
-      expo-sms:
-        specifier: ^14.0.8
-        version: 14.0.8(expo@54.0.35)
+      expo-modules-core:
+        specifier: '*'
+        version: 3.0.30(react-native@0.81.5(@babel/core@7.29.7)(@types/react@19.1.17)(react@19.1.0))(react@19.1.0)
     devDependencies:
       '@babel/core':
         specifier: ^7.25.2
@@ -1527,6 +1533,16 @@ packages:
     resolution: {integrity: sha512-79Dv+3mDF7i+2ajj7SkypSKHhl1cbln1OGavqrsF7p6mbUv11xpqpacPsGDCTRvCSjEEIez2ef1NveSVL3b0Ag==}
     peerDependencies:
       react-hook-form: ^7.0.0
+
+  '@hydropy/foreground-service@file:artifacts/hydropy-gateway/modules/foreground-service':
+    resolution: {directory: artifacts/hydropy-gateway/modules/foreground-service, type: directory}
+    peerDependencies:
+      expo-modules-core: '*'
+
+  '@hydropy/native-sms@file:artifacts/hydropy-gateway/modules/native-sms':
+    resolution: {directory: artifacts/hydropy-gateway/modules/native-sms, type: directory}
+    peerDependencies:
+      expo-modules-core: '*'
 
   '@isaacs/fs-minipass@4.0.1':
     resolution: {integrity: sha512-wgm9Ehl2jpeqP3zw/7mo3kRHFp5MEDhqAdwy1fTGkHAwnkGOVsgpvQhL8B5n1qlb01jV3n/bI0ZfZp5lWA1k4w==}
@@ -3705,11 +3721,6 @@ packages:
   expo-server@1.0.7:
     resolution: {integrity: sha512-mcmyML3oXcqFUXUxtdtCL1O00ztNI2v76d+MdniXRUgHNxIcHZ05zo+DqBaOOT6LQnPk4vA4YHqQl7iGUfRb3g==}
     engines: {node: '>=20.16.0'}
-
-  expo-sms@14.0.8:
-    resolution: {integrity: sha512-yNdUUP4Y+arvQByXsSzY8UFPadezxcFPH4u1Ubab2VIRNmDJZf7TIAFmDi8dAbm5CPxbzjKBEbBIkmkVKppHHA==}
-    peerDependencies:
-      expo: '*'
 
   expo-splash-screen@31.0.13:
     resolution: {integrity: sha512-1epJLC1cDlwwj089R2h8cxaU5uk4ONVAC+vzGiTZH4YARQhL4Stlz1MbR6yAS173GMosvkE6CAeihR7oIbCkDA==}
@@ -7004,6 +7015,14 @@ snapshots:
     dependencies:
       react-hook-form: 7.80.0(react@19.1.0)
 
+  '@hydropy/foreground-service@file:artifacts/hydropy-gateway/modules/foreground-service(expo-modules-core@3.0.30(react-native@0.81.5(@babel/core@7.29.7)(@types/react@19.1.17)(react@19.1.0))(react@19.1.0))':
+    dependencies:
+      expo-modules-core: 3.0.30(react-native@0.81.5(@babel/core@7.29.7)(@types/react@19.1.17)(react@19.1.0))(react@19.1.0)
+
+  '@hydropy/native-sms@file:artifacts/hydropy-gateway/modules/native-sms(expo-modules-core@3.0.30(react-native@0.81.5(@babel/core@7.29.7)(@types/react@19.1.17)(react@19.1.0))(react@19.1.0))':
+    dependencies:
+      expo-modules-core: 3.0.30(react-native@0.81.5(@babel/core@7.29.7)(@types/react@19.1.17)(react@19.1.0))(react@19.1.0)
+
   '@isaacs/fs-minipass@4.0.1':
     dependencies:
       minipass: 7.1.3
@@ -9563,10 +9582,6 @@ snapshots:
       - supports-color
 
   expo-server@1.0.7: {}
-
-  expo-sms@14.0.8(expo@54.0.35):
-    dependencies:
-      expo: 54.0.35(@babel/core@7.29.7)(@expo/metro-runtime@6.1.2)(expo-router@6.0.24)(react-native@0.81.5(@babel/core@7.29.7)(@types/react@19.1.17)(react@19.1.0))(react@19.1.0)(typescript@5.9.3)
 
   expo-splash-screen@31.0.13(expo@54.0.35)(typescript@5.9.3):
     dependencies:

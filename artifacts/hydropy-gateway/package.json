@@ -56,9 +56,11 @@
     "zod-validation-error": "^3.4.0"
   },
   "dependencies": {
+    "@hydropy/native-sms": "file:./modules/native-sms",
+    "@hydropy/foreground-service": "file:./modules/foreground-service",
+    "expo-modules-core": "*",
     "expo-battery": "^10.0.8",
     "expo-camera": "^17.0.10",
-    "expo-device": "^8.0.10",
-    "expo-sms": "^14.0.8"
+    "expo-device": "^8.0.10"
   }
 }

@@ -8,8 +8,9 @@ import React, {
 } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Platform } from 'react-native';
-import * as SMS from 'expo-sms';
 import * as Haptics from 'expo-haptics';
+import { sendSms, requestSmsPermission, hasSmsPermission } from '@hydropy/native-sms';
+import { startGatewayService, stopGatewayService } from '@hydropy/foreground-service';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -43,6 +44,7 @@ export interface SmsTask {
 interface GatewayContextValue {
   config: ProvisionConfig | null;
   status: ConnectionStatus;
+  smsPermission: 'unknown' | 'granted' | 'denied';
   battery: number;
   signal: number;
   sentCount: number;
@@ -53,6 +55,7 @@ interface GatewayContextValue {
   provision: (cfg: ProvisionConfig) => Promise<void>;
   unprovision: () => Promise<void>;
   processSmsTask: (messageId: number) => Promise<void>;
+  requestSmsAccess: () => Promise<boolean>;
 }
 
 // ─── Context ─────────────────────────────────────────────────────────────────
@@ -77,11 +80,9 @@ function makeId(): string {
 
 function toWsUrl(serverUrl: string, token: string): string {
   const base = serverUrl.replace(/\/$/, '');
-  // Handle old QR format where serverUrl already contains the full WS path
-  // e.g. "wss://domain/api/ws" → strip to base, then re-append cleanly
   const stripped = base
-    .replace(/\/api\/ws$/, '')               // remove trailing /api/ws
-    .replace(/^wss:\/\//, 'https://')        // normalise to https scheme
+    .replace(/\/api\/ws$/, '')
+    .replace(/^wss:\/\//, 'https://')
     .replace(/^ws:\/\//, 'http://');
   const ws = stripped
     .replace(/^https:\/\//, 'wss://')
@@ -120,9 +121,7 @@ async function getDeviceInfo(): Promise<{
   }
 }
 
-// Simulate signal based on connection quality (1-5 bars → 20-100)
 function getSignalStrength(): number {
-  // In a real app, use Netinfo or device APIs. Simulate here.
   return Math.floor(60 + Math.random() * 40);
 }
 
@@ -136,6 +135,7 @@ const RECONNECT_MAX = 30_000;
 export function GatewayProvider({ children }: { children: React.ReactNode }) {
   const [config, setConfig] = useState<ProvisionConfig | null>(null);
   const [status, setStatus] = useState<ConnectionStatus>('disconnected');
+  const [smsPermission, setSmsPermission] = useState<'unknown' | 'granted' | 'denied'>('unknown');
   const [battery, setBattery] = useState<number>(0);
   const [signal, setSignal] = useState<number>(0);
   const [sentCount, setSentCount] = useState<number>(0);
@@ -151,15 +151,11 @@ export function GatewayProvider({ children }: { children: React.ReactNode }) {
   const connectedAt = useRef<number | null>(null);
   const uptimeRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const configRef = useRef<ProvisionConfig | null>(null);
-  // Ref mirror of smsTasks so processSmsTask always reads current data
   const smsTasksRef = useRef<SmsTask[]>([]);
-  // Set of messageIds currently being processed — prevents duplicate sends
   const processingRef = useRef<Set<number>>(new Set());
-  // Stable ref to processSmsTask so ws.onmessage auto-trigger doesn't capture stale closure
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const processSmsTaskRef = useRef<(messageId: number) => Promise<void>>(async () => {});
 
-  // Keep configRef in sync
   useEffect(() => {
     configRef.current = config;
   }, [config]);
@@ -205,7 +201,7 @@ export function GatewayProvider({ children }: { children: React.ReactNode }) {
 
   const startHeartbeat = useCallback(() => {
     if (heartbeatRef.current) clearInterval(heartbeatRef.current);
-    sendHeartbeat(); // immediate first beat
+    sendHeartbeat();
     heartbeatRef.current = setInterval(sendHeartbeat, HEARTBEAT_INTERVAL);
   }, [sendHeartbeat]);
 
@@ -267,6 +263,13 @@ export function GatewayProvider({ children }: { children: React.ReactNode }) {
         Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
         startHeartbeat();
         startUptimeCounter();
+        // Start foreground service to keep WS alive when screen is off
+        if (Platform.OS === 'android') {
+          startGatewayService(
+            'HYDROPY Gateway Active',
+            `Connected to ${cfg.serverUrl}`,
+          );
+        }
       };
 
       ws.onmessage = (evt) => {
@@ -306,12 +309,13 @@ export function GatewayProvider({ children }: { children: React.ReactNode }) {
         stopUptimeCounter();
         if (!configRef.current) {
           setStatus('disconnected');
+          if (Platform.OS === 'android') stopGatewayService();
           return;
         }
-        // 4001/4003/4008 = auth failure / forbidden / bad token — do not retry
         const isAuthFailure = evt.code === 4001 || evt.code === 4003 || evt.code === 4008;
         if (isAuthFailure) {
           setStatus('error');
+          if (Platform.OS === 'android') stopGatewayService();
           addLog('error', `Auth rejected (code ${evt.code}) — check your device token and re-provision`);
           return;
         }
@@ -327,15 +331,43 @@ export function GatewayProvider({ children }: { children: React.ReactNode }) {
     [addLog, startHeartbeat, stopHeartbeat, startUptimeCounter, stopUptimeCounter],
   );
 
+  // ── SMS Permission ────────────────────────────────────────────────────────────
+
+  const requestSmsAccess = useCallback(async (): Promise<boolean> => {
+    if (Platform.OS !== 'android') {
+      setSmsPermission('granted');
+      return true;
+    }
+    const granted = await requestSmsPermission();
+    setSmsPermission(granted ? 'granted' : 'denied');
+    if (!granted) {
+      addLog('error', 'SEND_SMS permission denied — go to Settings → Apps → HYDROPY Gateway → Permissions');
+    } else {
+      addLog('info', 'SEND_SMS permission granted');
+    }
+    return granted;
+  }, [addLog]);
+
+  // Check permission on mount (covers re-launch after user revokes from Settings)
+  useEffect(() => {
+    if (Platform.OS !== 'android') {
+      setSmsPermission('granted');
+      return;
+    }
+    hasSmsPermission().then((ok: boolean) => setSmsPermission(ok ? 'granted' : 'denied'));
+  }, []);
+
   // ── Provisioning ─────────────────────────────────────────────────────────────
 
   const provision = useCallback(
     async (cfg: ProvisionConfig) => {
+      // Request SEND_SMS before connecting so the user grants it while the app is foreground
+      await requestSmsAccess();
       await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(cfg));
       setConfig(cfg);
       connect(cfg);
     },
-    [connect],
+    [connect, requestSmsAccess],
   );
 
   const unprovision = useCallback(async () => {
@@ -348,6 +380,7 @@ export function GatewayProvider({ children }: { children: React.ReactNode }) {
     }
     stopHeartbeat();
     stopUptimeCounter();
+    if (Platform.OS === 'android') stopGatewayService();
     setConfig(null);
     setStatus('disconnected');
     setLogs([]);
@@ -389,16 +422,13 @@ export function GatewayProvider({ children }: { children: React.ReactNode }) {
 
   const processSmsTask = useCallback(
     async (messageId: number) => {
-      // Prevent duplicate concurrent sends for the same message
       if (processingRef.current.has(messageId)) return;
 
-      // Read the task from the ref (always current) and guard non-pending tasks
       const task = smsTasksRef.current.find((t) => t.messageId === messageId);
       if (!task || task.status !== 'pending') return;
 
       processingRef.current.add(messageId);
 
-      // Mark as sending atomically
       setSmsTasks((prev) => {
         const next = prev.map((t) =>
           t.messageId === messageId ? { ...t, status: 'sending' as const } : t,
@@ -408,26 +438,31 @@ export function GatewayProvider({ children }: { children: React.ReactNode }) {
       });
 
       try {
-        const available = await SMS.isAvailableAsync();
-        if (!available) {
-          throw new Error('SMS not available on this device');
+        if (Platform.OS !== 'android') {
+          throw new Error('Native SMS is only available on Android');
         }
-        const { result } = await SMS.sendSMSAsync([task.phone], task.text);
-        if (result === 'sent' || result === 'unknown') {
-          sendWs({ type: 'sms.result', messageId, status: 'SENT' });
-          setSentCount((n) => n + 1);
-          setSmsTasks((prev) => {
-            const next = prev.map((t) =>
-              t.messageId === messageId ? { ...t, status: 'sent' as const } : t,
-            );
-            smsTasksRef.current = next;
-            return next;
-          });
-          addLog('success', `SMS sent to ${task.phone}`);
-          Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-        } else {
-          throw new Error('SMS cancelled by user');
+
+        // Re-check runtime permission before every send (may have been revoked in Settings)
+        const permitted = await hasSmsPermission();
+        if (!permitted) {
+          setSmsPermission('denied');
+          throw new Error('SEND_SMS permission not granted — open Settings to allow it');
         }
+
+        // sendSms uses SmsManager directly — no dialog, no user interaction
+        await sendSms(task.phone, task.text);
+
+        sendWs({ type: 'sms.result', messageId, status: 'SENT' });
+        setSentCount((n) => n + 1);
+        setSmsTasks((prev) => {
+          const next = prev.map((t) =>
+            t.messageId === messageId ? { ...t, status: 'sent' as const } : t,
+          );
+          smsTasksRef.current = next;
+          return next;
+        });
+        addLog('success', `SMS sent to ${task.phone}`);
+        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
       } catch (err: unknown) {
         const reason = err instanceof Error ? err.message : 'Unknown error';
         sendWs({ type: 'sms.result', messageId, status: 'FAILED', reason });
@@ -447,8 +482,6 @@ export function GatewayProvider({ children }: { children: React.ReactNode }) {
     [sendWs, addLog],
   );
 
-  // Keep processSmsTaskRef up-to-date so the ws.onmessage auto-trigger always calls
-  // the latest version without capturing a stale closure
   processSmsTaskRef.current = processSmsTask;
 
   return (
@@ -456,6 +489,7 @@ export function GatewayProvider({ children }: { children: React.ReactNode }) {
       value={{
         config,
         status,
+        smsPermission,
         battery,
         signal,
         sentCount,
@@ -466,6 +500,7 @@ export function GatewayProvider({ children }: { children: React.ReactNode }) {
         provision,
         unprovision,
         processSmsTask,
+        requestSmsAccess,
       }}
     >
       {children}
