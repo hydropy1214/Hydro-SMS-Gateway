@@ -1,0 +1,23 @@
+kind = "mobile"
+previewPath = "/mobile/"
+title = "HYDROPY Gateway"
+version = "1.0.0"
+id = "artifacts/hydropy-gateway"
+router = "expo-domain"
+
+[[services]]
+name = "expo"
+ensurePreviewReachable = "/status"
+paths = [ "/mobile/" ]
+localPort = 19596
+
+[services.development]
+run = "pnpm --filter @workspace/hydropy-gateway run dev"
+
+[services.production]
+build = [ "pnpm", "--filter", "@workspace/hydropy-gateway", "run", "build" ]
+run = [ "pnpm", "--filter", "@workspace/hydropy-gateway", "run", "serve" ]
+
+[services.env]
+PORT = "19596"
+BASE_PATH = "/mobile/"

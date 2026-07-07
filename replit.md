@@ -6,6 +6,7 @@ A distributed SMS gateway management platform where Android phones act as SMS ga
 
 - `pnpm --filter @workspace/api-server run dev` — run the API server (port 8080, `/api` + `/ws`)
 - `pnpm --filter @workspace/hydropy-dashboard run dev` — run the web dashboard (port 19444, `/`)
+- `pnpm --filter @workspace/hydropy-gateway run dev` — run the Android gateway Expo app (`/mobile/`)
 - `pnpm run typecheck` — full typecheck across all packages
 - `pnpm run build` — typecheck + build all packages
 - `pnpm --filter @workspace/api-spec run codegen` — regenerate API hooks and Zod schemas from the OpenAPI spec
@@ -38,9 +39,9 @@ HYDROPY Dashboard (/)
         |
    ─────────────────
    |               |
-PostgreSQL    WebSocket (/ws)
+PostgreSQL    WebSocket (/api/ws)
                    |
-          Android Gateway App
+        Gateway App (/mobile/) ← Expo Go on Android
                    |
            Android SMS API → SIM → Mobile Network
 ```
@@ -54,6 +55,10 @@ PostgreSQL    WebSocket (/ws)
 - `artifacts/api-server/src/routes/` — Express route handlers
 - `artifacts/api-server/src/lib/` — Auth, WebSocket, Scheduler
 - `artifacts/hydropy-dashboard/src/` — React dashboard UI
+- `artifacts/hydropy-gateway/` — Expo mobile gateway app (Android/iOS)
+- `artifacts/hydropy-gateway/context/GatewayContext.tsx` — WS connection, heartbeat, SMS dispatch
+- `artifacts/hydropy-gateway/app/setup.tsx` — QR scan + manual pairing screen
+- `artifacts/hydropy-gateway/app/gateway.tsx` — Live status dashboard screen
 
 ## Architecture decisions
 
