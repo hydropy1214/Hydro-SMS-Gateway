@@ -6,15 +6,23 @@ import { LayoutDashboard, Smartphone, Megaphone, MessageSquare, LogOut, Terminal
 import { Button } from '@/components/ui/button';
 
 export function AppShell({ children }: { children: React.ReactNode }) {
-  const [location] = useLocation();
+  const [location, setLocation] = useLocation();
   const { user, setUser } = useAuth();
   const logout = useLogout();
 
   const handleLogout = () => {
     logout.mutate(undefined, {
       onSuccess: () => {
+        localStorage.removeItem('hydropy_token');
         setUser(null);
-      }
+        setLocation('/login');
+      },
+      onError: () => {
+        // Force logout even if API call fails
+        localStorage.removeItem('hydropy_token');
+        setUser(null);
+        setLocation('/login');
+      },
     });
   };
 
@@ -31,19 +39,21 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       <aside className="w-64 flex flex-col border-r border-border bg-card">
         <div className="h-14 flex items-center px-6 border-b border-border">
           <TerminalSquare className="w-5 h-5 text-primary mr-2" />
-          <span className="font-mono font-bold tracking-tight text-foreground">HYDROPY<span className="text-primary">_</span></span>
+          <span className="font-mono font-bold tracking-tight text-foreground">
+            HYDROPY<span className="text-primary">_</span>
+          </span>
         </div>
-        
+
         <nav className="flex-1 py-6 px-3 space-y-1 overflow-y-auto">
           {navItems.map((item) => {
             const isActive = item.href === '/' ? location === '/' : location.startsWith(item.href);
             return (
-              <Link 
-                key={item.href} 
+              <Link
+                key={item.href}
                 href={item.href}
                 className={`flex items-center px-3 py-2 text-sm font-medium rounded-sm transition-colors ${
-                  isActive 
-                    ? 'bg-primary/10 text-primary border border-primary/20' 
+                  isActive
+                    ? 'bg-primary/10 text-primary border border-primary/20'
                     : 'text-muted-foreground hover:bg-accent hover:text-foreground border border-transparent'
                 }`}
               >
@@ -55,12 +65,19 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         </nav>
 
         <div className="p-4 border-t border-border">
-          <div className="flex items-center justify-between">
-            <div className="flex flex-col overflow-hidden">
+          <div className="flex items-center justify-between gap-2">
+            <div className="flex flex-col overflow-hidden min-w-0">
               <span className="text-sm font-medium text-foreground truncate">{user?.name}</span>
-              <span className="text-xs text-muted-foreground font-mono truncate">{user?.email}</span>
+              <span className="text-xs text-muted-foreground font-mono truncate">{user?.role?.toUpperCase()}</span>
             </div>
-            <Button variant="ghost" size="icon" onClick={handleLogout} className="text-muted-foreground hover:text-destructive">
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={handleLogout}
+              className="text-muted-foreground hover:text-destructive flex-shrink-0"
+              title="Logout"
+              disabled={logout.isPending}
+            >
               <LogOut className="w-4 h-4" />
             </Button>
           </div>

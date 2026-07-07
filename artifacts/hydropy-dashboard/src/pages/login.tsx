@@ -13,7 +13,7 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 
 const loginSchema = z.object({
   email: z.string().email('Invalid email address'),
-  password: z.string().min(1, 'Password is required')
+  password: z.string().min(1, 'Password is required'),
 });
 
 type LoginForm = z.infer<typeof loginSchema>;
@@ -22,18 +22,20 @@ export default function Login() {
   const { setUser } = useAuth();
   const [, setLocation] = useLocation();
   const loginMutation = useLogin();
-  
+
   const form = useForm<LoginForm>({
     resolver: zodResolver(loginSchema),
-    defaultValues: { email: '', password: '' }
+    defaultValues: { email: '', password: '' },
   });
 
   const onSubmit = (data: LoginForm) => {
     loginMutation.mutate({ data }, {
       onSuccess: (res) => {
+        // Persist token so every subsequent API request sends it
+        localStorage.setItem('hydropy_token', res.token);
         setUser(res.user);
         setLocation('/');
-      }
+      },
     });
   };
 
@@ -42,8 +44,12 @@ export default function Login() {
       <div className="w-full max-w-md space-y-8">
         <div className="text-center">
           <TerminalSquare className="w-12 h-12 text-primary mx-auto mb-4" />
-          <h1 className="text-3xl font-mono font-bold tracking-tight text-foreground">HYDROPY<span className="text-primary">_</span></h1>
-          <p className="mt-2 text-sm text-muted-foreground font-mono uppercase tracking-widest">Gateway Infrastructure Console</p>
+          <h1 className="text-3xl font-mono font-bold tracking-tight text-foreground">
+            HYDROPY<span className="text-primary">_</span>
+          </h1>
+          <p className="mt-2 text-sm text-muted-foreground font-mono uppercase tracking-widest">
+            Gateway Infrastructure Console
+          </p>
         </div>
 
         <div className="bg-card border border-border rounded-lg p-6 shadow-2xl">
@@ -51,7 +57,7 @@ export default function Login() {
             <Alert variant="destructive" className="mb-6 border-destructive/50 bg-destructive/10 text-destructive">
               <AlertCircle className="h-4 w-4" />
               <AlertDescription className="font-mono text-xs">
-                Authentication failed. Invalid credentials.
+                Authentication failed. Check your credentials and try again.
               </AlertDescription>
             </Alert>
           )}
@@ -63,11 +69,13 @@ export default function Login() {
                 name="email"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel className="font-mono text-xs text-muted-foreground uppercase">Operator ID</FormLabel>
+                    <FormLabel className="font-mono text-xs text-muted-foreground uppercase">
+                      Operator ID
+                    </FormLabel>
                     <FormControl>
-                      <Input 
-                        placeholder="admin@hydropy.local" 
-                        {...field} 
+                      <Input
+                        placeholder="admin@hydropy.io"
+                        {...field}
                         autoComplete="email"
                         className="font-mono bg-background border-input"
                       />
@@ -81,11 +89,13 @@ export default function Login() {
                 name="password"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel className="font-mono text-xs text-muted-foreground uppercase">Passkey</FormLabel>
+                    <FormLabel className="font-mono text-xs text-muted-foreground uppercase">
+                      Passkey
+                    </FormLabel>
                     <FormControl>
-                      <Input 
-                        type="password" 
-                        {...field} 
+                      <Input
+                        type="password"
+                        {...field}
                         autoComplete="current-password"
                         className="font-mono bg-background border-input"
                       />
@@ -94,15 +104,19 @@ export default function Login() {
                   </FormItem>
                 )}
               />
-              <Button 
-                type="submit" 
-                className="w-full font-mono uppercase tracking-wider" 
+              <Button
+                type="submit"
+                className="w-full font-mono uppercase tracking-wider"
                 disabled={loginMutation.isPending}
               >
                 {loginMutation.isPending ? 'Authenticating...' : 'Initialize Session'}
               </Button>
             </form>
           </Form>
+
+          <p className="mt-4 text-center text-xs font-mono text-muted-foreground">
+            Default: admin@hydropy.io / admin123
+          </p>
         </div>
       </div>
     </div>
