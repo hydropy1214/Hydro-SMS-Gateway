@@ -77,7 +77,15 @@ function makeId(): string {
 
 function toWsUrl(serverUrl: string, token: string): string {
   const base = serverUrl.replace(/\/$/, '');
-  const ws = base.replace(/^https:\/\//, 'wss://').replace(/^http:\/\//, 'ws://');
+  // Handle old QR format where serverUrl already contains the full WS path
+  // e.g. "wss://domain/api/ws" → strip to base, then re-append cleanly
+  const stripped = base
+    .replace(/\/api\/ws$/, '')               // remove trailing /api/ws
+    .replace(/^wss:\/\//, 'https://')        // normalise to https scheme
+    .replace(/^ws:\/\//, 'http://');
+  const ws = stripped
+    .replace(/^https:\/\//, 'wss://')
+    .replace(/^http:\/\//, 'ws://');
   return `${ws}/api/ws?type=device&token=${encodeURIComponent(token)}`;
 }
 

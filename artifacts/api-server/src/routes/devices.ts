@@ -15,7 +15,8 @@ function generateDeviceToken(): string {
 function buildQrData(deviceId: number, token: string): string {
   const domain = process.env.REPLIT_DEV_DOMAIN;
   const fallback = process.env.SERVER_URL ?? "http://localhost:3000";
-  const serverUrl = domain ? `wss://${domain}/api/ws` : fallback;
+  // Use https:// base URL only — the gateway app appends /api/ws itself
+  const serverUrl = domain ? `https://${domain}` : fallback;
   return JSON.stringify({ serverUrl, deviceId, token });
 }
 
