@@ -13,7 +13,9 @@ function generateDeviceToken(): string {
 }
 
 function buildQrData(deviceId: number, token: string): string {
-  const serverUrl = process.env.SERVER_URL ?? "http://localhost:3000";
+  const domain = process.env.REPLIT_DEV_DOMAIN;
+  const fallback = process.env.SERVER_URL ?? "http://localhost:3000";
+  const serverUrl = domain ? `wss://${domain}/api/ws` : fallback;
   return JSON.stringify({ serverUrl, deviceId, token });
 }
 

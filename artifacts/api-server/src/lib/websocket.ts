@@ -15,7 +15,7 @@ const dashboardClients = new Set<WebSocket>();
 let wss: WebSocketServer | null = null;
 
 export function initWebSocket(server: Server): void {
-  wss = new WebSocketServer({ server, path: "/ws" });
+  wss = new WebSocketServer({ server, path: "/api/ws" });
 
   wss.on("connection", (ws, req) => {
     const url = new URL(req.url ?? "/", "http://localhost");

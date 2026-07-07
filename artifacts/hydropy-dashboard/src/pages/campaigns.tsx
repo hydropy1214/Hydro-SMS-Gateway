@@ -1,9 +1,9 @@
 import React from 'react';
-import { useListCampaigns, useDeleteCampaign, useStartCampaign, usePauseCampaign, useResumeCampaign, getListCampaignsQueryKey } from '@workspace/api-client-react';
+import { useListCampaigns, useDeleteCampaign, useStartCampaign, usePauseCampaign, useResumeCampaign, useStopCampaign, getListCampaignsQueryKey } from '@workspace/api-client-react';
 import { useQueryClient } from '@tanstack/react-query';
 import { Link, useLocation } from 'wouter';
 import { format } from 'date-fns';
-import { Plus, Play, Pause, Trash2, Megaphone, Activity, BarChart2 } from 'lucide-react';
+import { Plus, Play, Pause, Square, Trash2, BarChart2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { CampaignStatusBadge } from '@/components/status-badges';
@@ -17,9 +17,10 @@ export default function Campaigns() {
   const startCampaign = useStartCampaign();
   const pauseCampaign = usePauseCampaign();
   const resumeCampaign = useResumeCampaign();
+  const stopCampaign = useStopCampaign();
   const deleteCampaign = useDeleteCampaign();
 
-  const handleAction = (id: number, action: 'start' | 'pause' | 'resume' | 'delete') => {
+  const handleAction = (id: number, action: 'start' | 'pause' | 'resume' | 'stop' | 'delete') => {
     const opts = {
       onSuccess: () => queryClient.invalidateQueries({ queryKey: getListCampaignsQueryKey() })
     };
@@ -27,6 +28,7 @@ export default function Campaigns() {
     if (action === 'start') startCampaign.mutate({ campaignId: id }, opts);
     if (action === 'pause') pauseCampaign.mutate({ campaignId: id }, opts);
     if (action === 'resume') resumeCampaign.mutate({ campaignId: id }, opts);
+    if (action === 'stop' && confirm('Stop and cancel this campaign? All queued messages will be cancelled.')) stopCampaign.mutate({ campaignId: id }, opts);
     if (action === 'delete' && confirm('Delete this campaign?')) deleteCampaign.mutate({ campaignId: id }, opts);
   };
 
@@ -93,9 +95,14 @@ export default function Campaigns() {
                         </Button>
                       )}
                       {camp.status === 'RUNNING' && (
-                        <Button variant="outline" size="sm" className="h-7 w-7 p-0" title="Pause" onClick={() => handleAction(camp.id, 'pause')}>
-                          <Pause className="w-3.5 h-3.5 text-amber-500" />
-                        </Button>
+                        <>
+                          <Button variant="outline" size="sm" className="h-7 w-7 p-0" title="Pause" onClick={() => handleAction(camp.id, 'pause')}>
+                            <Pause className="w-3.5 h-3.5 text-amber-500" />
+                          </Button>
+                          <Button variant="outline" size="sm" className="h-7 w-7 p-0" title="Stop Campaign" onClick={() => handleAction(camp.id, 'stop')}>
+                            <Square className="w-3.5 h-3.5 text-red-500" />
+                          </Button>
+                        </>
                       )}
                       {camp.status === 'PAUSED' && (
                         <Button variant="outline" size="sm" className="h-7 w-7 p-0" title="Resume" onClick={() => handleAction(camp.id, 'resume')}>

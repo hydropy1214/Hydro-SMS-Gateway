@@ -234,6 +234,49 @@ router.post("/campaigns/:campaignId/resume", requireAuth, async (req, res) => {
   }
 });
 
+/** POST /api/campaigns/:campaignId/stop */
+router.post("/campaigns/:campaignId/stop", requireAuth, async (req, res) => {
+  try {
+    const campaignId = Number(req.params.campaignId);
+    if (isNaN(campaignId)) {
+      res.status(400).json({ error: "Invalid campaign ID" });
+      return;
+    }
+    const [updated] = await db
+      .update(campaignsTable)
+      .set({ status: "CANCELLED" })
+      .where(
+        and(
+          eq(campaignsTable.id, campaignId),
+          sql`${campaignsTable.status} IN ('RUNNING', 'PAUSED', 'SCHEDULED')`,
+        ),
+      )
+      .returning();
+
+    if (!updated) {
+      res.status(404).json({ error: "Campaign not found or not in a stoppable state" });
+      return;
+    }
+
+    // Cancel all pending/queued messages so the scheduler won't dispatch them
+    await db
+      .update(messagesTable)
+      .set({ status: "FAILED", failureReason: "Campaign cancelled" })
+      .where(
+        and(
+          eq(messagesTable.campaignId, campaignId),
+          sql`${messagesTable.status} IN ('QUEUED', 'CREATED', 'ASSIGNED')`,
+        ),
+      );
+
+    broadcast({ type: "campaign.cancelled", campaignId });
+    res.json(updated);
+  } catch (err) {
+    req.log.error({ err }, "stopCampaign error");
+    res.status(500).json({ error: "Internal server error" });
+  }
+});
+
 /** GET /api/campaigns/:campaignId/contacts */
 router.get("/campaigns/:campaignId/contacts", requireAuth, async (req, res) => {
   try {

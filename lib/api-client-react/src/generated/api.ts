@@ -49,6 +49,9 @@ import type {
 import { customFetch } from '../custom-fetch';
 import type { ErrorType , BodyType } from '../custom-fetch';
 
+// Make queryKey optional at call sites — runtime always supplies a default via getXxxQueryKey()
+type _QueryOpts<T, E, D> = Omit<UseQueryOptions<T, E, D, QueryKey>, 'queryKey'> & { queryKey?: QueryKey };
+
 type AwaitedInput<T> = PromiseLike<T> | T;
 
       type Awaited<O> = O extends AwaitedInput<infer T> ? T : never;
@@ -107,7 +110,7 @@ export const getHealthCheckQueryKey = () => {
     }
 
 
-export const getHealthCheckQueryOptions = <TData = Awaited<ReturnType<typeof healthCheck>>, TError = ErrorType<unknown>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof healthCheck>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+export const getHealthCheckQueryOptions = <TData = Awaited<ReturnType<typeof healthCheck>>, TError = ErrorType<unknown>>( options?: { query?:_QueryOpts<Awaited<ReturnType<typeof healthCheck>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
 ) => {
 
 const {query: queryOptions, request: requestOptions} = options ?? {};
@@ -134,7 +137,7 @@ export type HealthCheckQueryError = ErrorType<unknown>
  */
 
 export function useHealthCheck<TData = Awaited<ReturnType<typeof healthCheck>>, TError = ErrorType<unknown>>(
-  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof healthCheck>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+  options?: { query?:_QueryOpts<Awaited<ReturnType<typeof healthCheck>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
 
  ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
 
@@ -324,7 +327,7 @@ export const getGetMeQueryKey = () => {
     }
 
 
-export const getGetMeQueryOptions = <TData = Awaited<ReturnType<typeof getMe>>, TError = ErrorType<ErrorResponse>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getMe>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+export const getGetMeQueryOptions = <TData = Awaited<ReturnType<typeof getMe>>, TError = ErrorType<ErrorResponse>>( options?: { query?:_QueryOpts<Awaited<ReturnType<typeof getMe>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
 ) => {
 
 const {query: queryOptions, request: requestOptions} = options ?? {};
@@ -351,7 +354,7 @@ export type GetMeQueryError = ErrorType<ErrorResponse>
  */
 
 export function useGetMe<TData = Awaited<ReturnType<typeof getMe>>, TError = ErrorType<ErrorResponse>>(
-  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getMe>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+  options?: { query?:_QueryOpts<Awaited<ReturnType<typeof getMe>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
 
  ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
 
@@ -401,7 +404,7 @@ export const getGetDashboardStatsQueryKey = () => {
     }
 
 
-export const getGetDashboardStatsQueryOptions = <TData = Awaited<ReturnType<typeof getDashboardStats>>, TError = ErrorType<unknown>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getDashboardStats>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+export const getGetDashboardStatsQueryOptions = <TData = Awaited<ReturnType<typeof getDashboardStats>>, TError = ErrorType<unknown>>( options?: { query?:_QueryOpts<Awaited<ReturnType<typeof getDashboardStats>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
 ) => {
 
 const {query: queryOptions, request: requestOptions} = options ?? {};
@@ -428,7 +431,7 @@ export type GetDashboardStatsQueryError = ErrorType<unknown>
  */
 
 export function useGetDashboardStats<TData = Awaited<ReturnType<typeof getDashboardStats>>, TError = ErrorType<unknown>>(
-  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getDashboardStats>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+  options?: { query?:_QueryOpts<Awaited<ReturnType<typeof getDashboardStats>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
 
  ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
 
@@ -478,7 +481,7 @@ export const getGetMessagesOverTimeQueryKey = () => {
     }
 
 
-export const getGetMessagesOverTimeQueryOptions = <TData = Awaited<ReturnType<typeof getMessagesOverTime>>, TError = ErrorType<unknown>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getMessagesOverTime>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+export const getGetMessagesOverTimeQueryOptions = <TData = Awaited<ReturnType<typeof getMessagesOverTime>>, TError = ErrorType<unknown>>( options?: { query?:_QueryOpts<Awaited<ReturnType<typeof getMessagesOverTime>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
 ) => {
 
 const {query: queryOptions, request: requestOptions} = options ?? {};
@@ -505,7 +508,7 @@ export type GetMessagesOverTimeQueryError = ErrorType<unknown>
  */
 
 export function useGetMessagesOverTime<TData = Awaited<ReturnType<typeof getMessagesOverTime>>, TError = ErrorType<unknown>>(
-  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getMessagesOverTime>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+  options?: { query?:_QueryOpts<Awaited<ReturnType<typeof getMessagesOverTime>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
 
  ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
 
@@ -562,7 +565,7 @@ export const getListDevicesQueryKey = (params?: ListDevicesParams,) => {
     }
 
 
-export const getListDevicesQueryOptions = <TData = Awaited<ReturnType<typeof listDevices>>, TError = ErrorType<unknown>>(params?: ListDevicesParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listDevices>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+export const getListDevicesQueryOptions = <TData = Awaited<ReturnType<typeof listDevices>>, TError = ErrorType<unknown>>(params?: ListDevicesParams, options?: { query?:_QueryOpts<Awaited<ReturnType<typeof listDevices>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
 ) => {
 
 const {query: queryOptions, request: requestOptions} = options ?? {};
@@ -589,7 +592,7 @@ export type ListDevicesQueryError = ErrorType<unknown>
  */
 
 export function useListDevices<TData = Awaited<ReturnType<typeof listDevices>>, TError = ErrorType<unknown>>(
- params?: ListDevicesParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listDevices>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+ params?: ListDevicesParams, options?: { query?:_QueryOpts<Awaited<ReturnType<typeof listDevices>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
 
  ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
 
@@ -709,7 +712,7 @@ export const getGetDeviceQueryKey = (deviceId: number,) => {
     }
 
 
-export const getGetDeviceQueryOptions = <TData = Awaited<ReturnType<typeof getDevice>>, TError = ErrorType<ErrorResponse>>(deviceId: number, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getDevice>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+export const getGetDeviceQueryOptions = <TData = Awaited<ReturnType<typeof getDevice>>, TError = ErrorType<ErrorResponse>>(deviceId: number, options?: { query?:_QueryOpts<Awaited<ReturnType<typeof getDevice>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
 ) => {
 
 const {query: queryOptions, request: requestOptions} = options ?? {};
@@ -736,7 +739,7 @@ export type GetDeviceQueryError = ErrorType<ErrorResponse>
  */
 
 export function useGetDevice<TData = Awaited<ReturnType<typeof getDevice>>, TError = ErrorType<ErrorResponse>>(
- deviceId: number, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getDevice>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+ deviceId: number, options?: { query?:_QueryOpts<Awaited<ReturnType<typeof getDevice>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
 
  ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
 
@@ -926,7 +929,7 @@ export const getGetDeviceQrQueryKey = (deviceId: number,) => {
     }
 
 
-export const getGetDeviceQrQueryOptions = <TData = Awaited<ReturnType<typeof getDeviceQr>>, TError = ErrorType<unknown>>(deviceId: number, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getDeviceQr>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+export const getGetDeviceQrQueryOptions = <TData = Awaited<ReturnType<typeof getDeviceQr>>, TError = ErrorType<unknown>>(deviceId: number, options?: { query?:_QueryOpts<Awaited<ReturnType<typeof getDeviceQr>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
 ) => {
 
 const {query: queryOptions, request: requestOptions} = options ?? {};
@@ -953,7 +956,7 @@ export type GetDeviceQrQueryError = ErrorType<unknown>
  */
 
 export function useGetDeviceQr<TData = Awaited<ReturnType<typeof getDeviceQr>>, TError = ErrorType<unknown>>(
- deviceId: number, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getDeviceQr>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+ deviceId: number, options?: { query?:_QueryOpts<Awaited<ReturnType<typeof getDeviceQr>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
 
  ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
 
@@ -1003,7 +1006,7 @@ export const getListSimCardsQueryKey = (deviceId: number,) => {
     }
 
 
-export const getListSimCardsQueryOptions = <TData = Awaited<ReturnType<typeof listSimCards>>, TError = ErrorType<unknown>>(deviceId: number, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listSimCards>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+export const getListSimCardsQueryOptions = <TData = Awaited<ReturnType<typeof listSimCards>>, TError = ErrorType<unknown>>(deviceId: number, options?: { query?:_QueryOpts<Awaited<ReturnType<typeof listSimCards>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
 ) => {
 
 const {query: queryOptions, request: requestOptions} = options ?? {};
@@ -1030,7 +1033,7 @@ export type ListSimCardsQueryError = ErrorType<unknown>
  */
 
 export function useListSimCards<TData = Awaited<ReturnType<typeof listSimCards>>, TError = ErrorType<unknown>>(
- deviceId: number, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listSimCards>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+ deviceId: number, options?: { query?:_QueryOpts<Awaited<ReturnType<typeof listSimCards>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
 
  ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
 
@@ -1087,7 +1090,7 @@ export const getListCampaignsQueryKey = (params?: ListCampaignsParams,) => {
     }
 
 
-export const getListCampaignsQueryOptions = <TData = Awaited<ReturnType<typeof listCampaigns>>, TError = ErrorType<unknown>>(params?: ListCampaignsParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listCampaigns>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+export const getListCampaignsQueryOptions = <TData = Awaited<ReturnType<typeof listCampaigns>>, TError = ErrorType<unknown>>(params?: ListCampaignsParams, options?: { query?:_QueryOpts<Awaited<ReturnType<typeof listCampaigns>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
 ) => {
 
 const {query: queryOptions, request: requestOptions} = options ?? {};
@@ -1114,7 +1117,7 @@ export type ListCampaignsQueryError = ErrorType<unknown>
  */
 
 export function useListCampaigns<TData = Awaited<ReturnType<typeof listCampaigns>>, TError = ErrorType<unknown>>(
- params?: ListCampaignsParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listCampaigns>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+ params?: ListCampaignsParams, options?: { query?:_QueryOpts<Awaited<ReturnType<typeof listCampaigns>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
 
  ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
 
@@ -1234,7 +1237,7 @@ export const getGetCampaignQueryKey = (campaignId: number,) => {
     }
 
 
-export const getGetCampaignQueryOptions = <TData = Awaited<ReturnType<typeof getCampaign>>, TError = ErrorType<ErrorResponse>>(campaignId: number, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getCampaign>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+export const getGetCampaignQueryOptions = <TData = Awaited<ReturnType<typeof getCampaign>>, TError = ErrorType<ErrorResponse>>(campaignId: number, options?: { query?:_QueryOpts<Awaited<ReturnType<typeof getCampaign>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
 ) => {
 
 const {query: queryOptions, request: requestOptions} = options ?? {};
@@ -1261,7 +1264,7 @@ export type GetCampaignQueryError = ErrorType<ErrorResponse>
  */
 
 export function useGetCampaign<TData = Awaited<ReturnType<typeof getCampaign>>, TError = ErrorType<ErrorResponse>>(
- campaignId: number, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getCampaign>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+ campaignId: number, options?: { query?:_QueryOpts<Awaited<ReturnType<typeof getCampaign>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
 
  ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
 
@@ -1488,6 +1491,56 @@ export const usePauseCampaign = <TError = ErrorType<unknown>,
       return useMutation(getPauseCampaignMutationOptions(options));
     }
 
+export const getStopCampaignUrl = (campaignId: number,) => {
+  return `/api/campaigns/${campaignId}/stop`
+}
+
+/**
+ * @summary Stop (cancel) a running or paused campaign
+ */
+export const stopCampaign = async (campaignId: number, options?: RequestInit): Promise<Campaign> => {
+  return customFetch<Campaign>(getStopCampaignUrl(campaignId), {
+    ...options,
+    method: 'POST',
+  });
+}
+
+export const getStopCampaignMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof stopCampaign>>, TError,{campaignId: number}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof stopCampaign>>, TError,{campaignId: number}, TContext> => {
+
+const mutationKey = ['stopCampaign'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof stopCampaign>>, {campaignId: number}> = (props) => {
+          const {campaignId} = props ?? {};
+          return stopCampaign(campaignId, requestOptions)
+        }
+
+  return { mutationFn, ...mutationOptions }
+}
+
+export type StopCampaignMutationResult = NonNullable<Awaited<ReturnType<typeof stopCampaign>>>
+export type StopCampaignMutationError = ErrorType<unknown>
+
+/**
+ * @summary Stop (cancel) a running or paused campaign
+ */
+export const useStopCampaign = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof stopCampaign>>, TError,{campaignId: number}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof stopCampaign>>,
+        TError,
+        {campaignId: number},
+        TContext
+      > => {
+      return useMutation(getStopCampaignMutationOptions(options));
+    }
+
 export const getResumeCampaignUrl = (campaignId: number,) => {
 
 
@@ -1591,7 +1644,7 @@ export const getListContactsQueryKey = (campaignId: number,) => {
     }
 
 
-export const getListContactsQueryOptions = <TData = Awaited<ReturnType<typeof listContacts>>, TError = ErrorType<unknown>>(campaignId: number, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listContacts>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+export const getListContactsQueryOptions = <TData = Awaited<ReturnType<typeof listContacts>>, TError = ErrorType<unknown>>(campaignId: number, options?: { query?:_QueryOpts<Awaited<ReturnType<typeof listContacts>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
 ) => {
 
 const {query: queryOptions, request: requestOptions} = options ?? {};
@@ -1618,7 +1671,7 @@ export type ListContactsQueryError = ErrorType<unknown>
  */
 
 export function useListContacts<TData = Awaited<ReturnType<typeof listContacts>>, TError = ErrorType<unknown>>(
- campaignId: number, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listContacts>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+ campaignId: number, options?: { query?:_QueryOpts<Awaited<ReturnType<typeof listContacts>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
 
  ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
 
@@ -1739,7 +1792,7 @@ export const getGetCampaignReportQueryKey = (campaignId: number,) => {
     }
 
 
-export const getGetCampaignReportQueryOptions = <TData = Awaited<ReturnType<typeof getCampaignReport>>, TError = ErrorType<unknown>>(campaignId: number, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getCampaignReport>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+export const getGetCampaignReportQueryOptions = <TData = Awaited<ReturnType<typeof getCampaignReport>>, TError = ErrorType<unknown>>(campaignId: number, options?: { query?:_QueryOpts<Awaited<ReturnType<typeof getCampaignReport>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
 ) => {
 
 const {query: queryOptions, request: requestOptions} = options ?? {};
@@ -1766,7 +1819,7 @@ export type GetCampaignReportQueryError = ErrorType<unknown>
  */
 
 export function useGetCampaignReport<TData = Awaited<ReturnType<typeof getCampaignReport>>, TError = ErrorType<unknown>>(
- campaignId: number, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getCampaignReport>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+ campaignId: number, options?: { query?:_QueryOpts<Awaited<ReturnType<typeof getCampaignReport>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
 
  ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
 
@@ -1823,7 +1876,7 @@ export const getListMessagesQueryKey = (params?: ListMessagesParams,) => {
     }
 
 
-export const getListMessagesQueryOptions = <TData = Awaited<ReturnType<typeof listMessages>>, TError = ErrorType<unknown>>(params?: ListMessagesParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listMessages>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+export const getListMessagesQueryOptions = <TData = Awaited<ReturnType<typeof listMessages>>, TError = ErrorType<unknown>>(params?: ListMessagesParams, options?: { query?:_QueryOpts<Awaited<ReturnType<typeof listMessages>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
 ) => {
 
 const {query: queryOptions, request: requestOptions} = options ?? {};
@@ -1850,7 +1903,7 @@ export type ListMessagesQueryError = ErrorType<unknown>
  */
 
 export function useListMessages<TData = Awaited<ReturnType<typeof listMessages>>, TError = ErrorType<unknown>>(
- params?: ListMessagesParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listMessages>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+ params?: ListMessagesParams, options?: { query?:_QueryOpts<Awaited<ReturnType<typeof listMessages>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
 
  ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
 
@@ -1900,7 +1953,7 @@ export const getGetMessageQueryKey = (messageId: number,) => {
     }
 
 
-export const getGetMessageQueryOptions = <TData = Awaited<ReturnType<typeof getMessage>>, TError = ErrorType<ErrorResponse>>(messageId: number, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getMessage>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+export const getGetMessageQueryOptions = <TData = Awaited<ReturnType<typeof getMessage>>, TError = ErrorType<ErrorResponse>>(messageId: number, options?: { query?:_QueryOpts<Awaited<ReturnType<typeof getMessage>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
 ) => {
 
 const {query: queryOptions, request: requestOptions} = options ?? {};
@@ -1927,7 +1980,7 @@ export type GetMessageQueryError = ErrorType<ErrorResponse>
  */
 
 export function useGetMessage<TData = Awaited<ReturnType<typeof getMessage>>, TError = ErrorType<ErrorResponse>>(
- messageId: number, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getMessage>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+ messageId: number, options?: { query?:_QueryOpts<Awaited<ReturnType<typeof getMessage>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
 
  ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
 

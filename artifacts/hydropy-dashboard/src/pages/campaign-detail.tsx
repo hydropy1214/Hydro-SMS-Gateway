@@ -1,8 +1,8 @@
-import React, { Activity } from 'react';
+import React from 'react';
 import { useParams, Link } from 'wouter';
 import { useGetCampaign, useGetCampaignReport, useListContacts } from '@workspace/api-client-react';
 import { format } from 'date-fns';
-import { ArrowLeft, Megaphone, Users, Send, AlertTriangle, FileText, CheckCircle2 } from 'lucide-react';
+import { ArrowLeft, Activity, Megaphone, Users, Send, AlertTriangle, FileText, CheckCircle2 } from 'lucide-react';
 import { CampaignStatusBadge, MessageStatusBadge } from '@/components/status-badges';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';

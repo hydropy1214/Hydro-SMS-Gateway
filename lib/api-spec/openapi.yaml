@@ -406,6 +406,31 @@ paths:
               schema:
                 $ref: "#/components/schemas/Campaign"
 
+  /campaigns/{campaignId}/stop:
+    post:
+      operationId: stopCampaign
+      tags: [campaigns]
+      summary: Stop (cancel) a running or paused campaign
+      parameters:
+        - name: campaignId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Campaign stopped
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Campaign"
+        "404":
+          description: Not found or not in a stoppable state
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
   /campaigns/{campaignId}/contacts:
     get:
       operationId: listContacts
