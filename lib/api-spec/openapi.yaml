@@ -3,13 +3,28 @@ info:
   # Do not change the title, if the title changes, the import paths will be broken
   title: Api
   version: 0.1.0
-  description: API specification
+  description: HYDROPY SMS Gateway Platform API
 servers:
   - url: /api
     description: Base API path
 tags:
   - name: health
     description: Health operations
+  - name: auth
+    description: Authentication
+  - name: devices
+    description: Gateway device management
+  - name: simcards
+    description: SIM card management
+  - name: campaigns
+    description: SMS campaign management
+  - name: contacts
+    description: Campaign contact management
+  - name: messages
+    description: Message tracking
+  - name: stats
+    description: Dashboard statistics
+
 paths:
   /healthz:
     get:
@@ -24,6 +39,499 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/HealthStatus"
+
+  # ─── Auth ───────────────────────────────────────────────────────────────────
+  /auth/login:
+    post:
+      operationId: login
+      tags: [auth]
+      summary: Login with email and password
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/LoginInput"
+      responses:
+        "200":
+          description: Login successful
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthResponse"
+        "401":
+          description: Invalid credentials
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /auth/logout:
+    post:
+      operationId: logout
+      tags: [auth]
+      summary: Logout current session
+      responses:
+        "200":
+          description: Logged out
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SuccessResponse"
+
+  /auth/me:
+    get:
+      operationId: getMe
+      tags: [auth]
+      summary: Get current authenticated user
+      responses:
+        "200":
+          description: Current user
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/User"
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  # ─── Stats ──────────────────────────────────────────────────────────────────
+  /stats/dashboard:
+    get:
+      operationId: getDashboardStats
+      tags: [stats]
+      summary: Get dashboard overview statistics
+      responses:
+        "200":
+          description: Dashboard statistics
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DashboardStats"
+
+  /stats/messages-over-time:
+    get:
+      operationId: getMessagesOverTime
+      tags: [stats]
+      summary: Get message send counts over time (last 7 days)
+      responses:
+        "200":
+          description: Message counts by day
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/DailyMessageCount"
+
+  # ─── Devices ────────────────────────────────────────────────────────────────
+  /devices:
+    get:
+      operationId: listDevices
+      tags: [devices]
+      summary: List all gateway devices
+      parameters:
+        - name: status
+          in: query
+          schema:
+            type: string
+            enum: [NEW, PENDING_CONNECTION, CONNECTED, ONLINE, BUSY, OFFLINE, BLOCKED]
+      responses:
+        "200":
+          description: List of devices
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Device"
+    post:
+      operationId: createDevice
+      tags: [devices]
+      summary: Register a new gateway device (generates QR token)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/DeviceInput"
+      responses:
+        "201":
+          description: Device created with QR data
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DeviceWithQr"
+
+  /devices/{deviceId}:
+    get:
+      operationId: getDevice
+      tags: [devices]
+      summary: Get a specific device
+      parameters:
+        - name: deviceId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Device details
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Device"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+    delete:
+      operationId: deleteDevice
+      tags: [devices]
+      summary: Remove a device
+      parameters:
+        - name: deviceId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Deleted
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SuccessResponse"
+
+  /devices/{deviceId}/disconnect:
+    post:
+      operationId: disconnectDevice
+      tags: [devices]
+      summary: Force disconnect a device
+      parameters:
+        - name: deviceId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Disconnected
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Device"
+
+  /devices/{deviceId}/qr:
+    get:
+      operationId: getDeviceQr
+      tags: [devices]
+      summary: Get or regenerate QR code for device pairing
+      parameters:
+        - name: deviceId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: QR code data
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DeviceQr"
+
+  # ─── SIM Cards ──────────────────────────────────────────────────────────────
+  /devices/{deviceId}/simcards:
+    get:
+      operationId: listSimCards
+      tags: [simcards]
+      summary: List SIM cards for a device
+      parameters:
+        - name: deviceId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: SIM cards
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/SimCard"
+
+  # ─── Campaigns ──────────────────────────────────────────────────────────────
+  /campaigns:
+    get:
+      operationId: listCampaigns
+      tags: [campaigns]
+      summary: List all campaigns
+      parameters:
+        - name: status
+          in: query
+          schema:
+            type: string
+            enum: [DRAFT, SCHEDULED, RUNNING, PAUSED, COMPLETED, FAILED, CANCELLED]
+      responses:
+        "200":
+          description: Campaigns list
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Campaign"
+    post:
+      operationId: createCampaign
+      tags: [campaigns]
+      summary: Create a new SMS campaign
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CampaignInput"
+      responses:
+        "201":
+          description: Campaign created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Campaign"
+
+  /campaigns/{campaignId}:
+    get:
+      operationId: getCampaign
+      tags: [campaigns]
+      summary: Get campaign details
+      parameters:
+        - name: campaignId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Campaign
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Campaign"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+    delete:
+      operationId: deleteCampaign
+      tags: [campaigns]
+      summary: Delete a campaign
+      parameters:
+        - name: campaignId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Deleted
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SuccessResponse"
+
+  /campaigns/{campaignId}/start:
+    post:
+      operationId: startCampaign
+      tags: [campaigns]
+      summary: Start a campaign
+      parameters:
+        - name: campaignId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Campaign started
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Campaign"
+
+  /campaigns/{campaignId}/pause:
+    post:
+      operationId: pauseCampaign
+      tags: [campaigns]
+      summary: Pause a running campaign
+      parameters:
+        - name: campaignId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Campaign paused
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Campaign"
+
+  /campaigns/{campaignId}/resume:
+    post:
+      operationId: resumeCampaign
+      tags: [campaigns]
+      summary: Resume a paused campaign
+      parameters:
+        - name: campaignId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Campaign resumed
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Campaign"
+
+  /campaigns/{campaignId}/contacts:
+    get:
+      operationId: listContacts
+      tags: [contacts]
+      summary: List contacts for a campaign
+      parameters:
+        - name: campaignId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Contacts
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Contact"
+    post:
+      operationId: importContacts
+      tags: [contacts]
+      summary: Import contacts (CSV data) into a campaign
+      parameters:
+        - name: campaignId
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ContactImportInput"
+      responses:
+        "201":
+          description: Contacts imported
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ContactImportResult"
+
+  /campaigns/{campaignId}/report:
+    get:
+      operationId: getCampaignReport
+      tags: [campaigns]
+      summary: Get campaign delivery report
+      parameters:
+        - name: campaignId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Campaign report
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CampaignReport"
+
+  # ─── Messages ───────────────────────────────────────────────────────────────
+  /messages:
+    get:
+      operationId: listMessages
+      tags: [messages]
+      summary: List messages with optional filters
+      parameters:
+        - name: campaignId
+          in: query
+          schema:
+            type: integer
+        - name: deviceId
+          in: query
+          schema:
+            type: integer
+        - name: status
+          in: query
+          schema:
+            type: string
+            enum: [CREATED, QUEUED, ASSIGNED, SENDING, SENT, FAILED, DELIVERED]
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 50
+        - name: offset
+          in: query
+          schema:
+            type: integer
+            default: 0
+      responses:
+        "200":
+          description: Messages list
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MessageList"
+
+  /messages/{messageId}:
+    get:
+      operationId: getMessage
+      tags: [messages]
+      summary: Get a specific message
+      parameters:
+        - name: messageId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Message
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Message"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
 components:
   schemas:
     HealthStatus:
@@ -34,3 +542,306 @@ components:
       required:
         - status
 
+    ErrorResponse:
+      type: object
+      properties:
+        error:
+          type: string
+      required:
+        - error
+
+    SuccessResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+        message:
+          type: string
+      required:
+        - success
+
+    # ─── Auth ──────────────────────────────────────────────────────────────────
+    LoginInput:
+      type: object
+      required: [email, password]
+      properties:
+        email:
+          type: string
+          format: email
+        password:
+          type: string
+          minLength: 1
+
+    AuthResponse:
+      type: object
+      required: [user, token]
+      properties:
+        user:
+          $ref: "#/components/schemas/User"
+        token:
+          type: string
+
+    User:
+      type: object
+      required: [id, name, email, role, createdAt]
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        email:
+          type: string
+        role:
+          type: string
+          enum: [admin, operator]
+        createdAt:
+          type: string
+          format: date-time
+
+    # ─── Stats ─────────────────────────────────────────────────────────────────
+    DashboardStats:
+      type: object
+      required:
+        - totalDevices
+        - onlineDevices
+        - activeCampaigns
+        - totalMessagesSent
+        - totalMessagesFailed
+        - totalMessagesQueued
+      properties:
+        totalDevices:
+          type: integer
+        onlineDevices:
+          type: integer
+        activeCampaigns:
+          type: integer
+        totalMessagesSent:
+          type: integer
+        totalMessagesFailed:
+          type: integer
+        totalMessagesQueued:
+          type: integer
+
+    DailyMessageCount:
+      type: object
+      required: [date, sent, failed]
+      properties:
+        date:
+          type: string
+        sent:
+          type: integer
+        failed:
+          type: integer
+
+    # ─── Devices ───────────────────────────────────────────────────────────────
+    DeviceInput:
+      type: object
+      required: [deviceName]
+      properties:
+        deviceName:
+          type: string
+          minLength: 1
+
+    Device:
+      type: object
+      required: [id, deviceName, status, createdAt]
+      properties:
+        id:
+          type: integer
+        userId:
+          type: ["integer", "null"]
+        deviceName:
+          type: string
+        deviceToken:
+          type: ["string", "null"]
+        status:
+          type: string
+          enum: [NEW, PENDING_CONNECTION, CONNECTED, ONLINE, BUSY, OFFLINE, BLOCKED]
+        androidVersion:
+          type: ["string", "null"]
+        model:
+          type: ["string", "null"]
+        appVersion:
+          type: ["string", "null"]
+        battery:
+          type: ["integer", "null"]
+        signal:
+          type: ["integer", "null"]
+        lastHeartbeat:
+          type: ["string", "null"]
+          format: date-time
+        createdAt:
+          type: string
+          format: date-time
+
+    DeviceWithQr:
+      allOf:
+        - $ref: "#/components/schemas/Device"
+        - type: object
+          required: [qrData]
+          properties:
+            qrData:
+              type: string
+
+    DeviceQr:
+      type: object
+      required: [deviceId, qrData, token]
+      properties:
+        deviceId:
+          type: integer
+        qrData:
+          type: string
+        token:
+          type: string
+
+    SimCard:
+      type: object
+      required: [id, deviceId, slot, status]
+      properties:
+        id:
+          type: integer
+        deviceId:
+          type: integer
+        slot:
+          type: integer
+        carrier:
+          type: ["string", "null"]
+        phoneNumber:
+          type: ["string", "null"]
+        status:
+          type: string
+          enum: [ACTIVE, INACTIVE, UNKNOWN]
+
+    # ─── Campaigns ─────────────────────────────────────────────────────────────
+    CampaignInput:
+      type: object
+      required: [name, messageTemplate]
+      properties:
+        name:
+          type: string
+          minLength: 1
+        messageTemplate:
+          type: string
+          minLength: 1
+
+    Campaign:
+      type: object
+      required: [id, name, messageTemplate, status, totalMessages, sent, failed, createdAt]
+      properties:
+        id:
+          type: integer
+        userId:
+          type: ["integer", "null"]
+        name:
+          type: string
+        messageTemplate:
+          type: string
+        status:
+          type: string
+          enum: [DRAFT, SCHEDULED, RUNNING, PAUSED, COMPLETED, FAILED, CANCELLED]
+        totalMessages:
+          type: integer
+        sent:
+          type: integer
+        failed:
+          type: integer
+        createdAt:
+          type: string
+          format: date-time
+
+    CampaignReport:
+      type: object
+      required: [campaign, sent, failed, queued, successRate, messages]
+      properties:
+        campaign:
+          $ref: "#/components/schemas/Campaign"
+        sent:
+          type: integer
+        failed:
+          type: integer
+        queued:
+          type: integer
+        successRate:
+          type: number
+        messages:
+          type: array
+          items:
+            $ref: "#/components/schemas/Message"
+
+    # ─── Contacts ──────────────────────────────────────────────────────────────
+    Contact:
+      type: object
+      required: [id, campaignId, phoneNumber]
+      properties:
+        id:
+          type: integer
+        campaignId:
+          type: integer
+        name:
+          type: ["string", "null"]
+        phoneNumber:
+          type: string
+
+    ContactImportInput:
+      type: object
+      required: [contacts]
+      properties:
+        contacts:
+          type: array
+          items:
+            type: object
+            required: [phoneNumber]
+            properties:
+              phoneNumber:
+                type: string
+              name:
+                type: string
+
+    ContactImportResult:
+      type: object
+      required: [imported, duplicatesRemoved, invalid]
+      properties:
+        imported:
+          type: integer
+        duplicatesRemoved:
+          type: integer
+        invalid:
+          type: integer
+
+    # ─── Messages ──────────────────────────────────────────────────────────────
+    Message:
+      type: object
+      required: [id, recipient, message, status, createdAt]
+      properties:
+        id:
+          type: integer
+        campaignId:
+          type: ["integer", "null"]
+        deviceId:
+          type: ["integer", "null"]
+        recipient:
+          type: string
+        message:
+          type: string
+        status:
+          type: string
+          enum: [CREATED, QUEUED, ASSIGNED, SENDING, SENT, FAILED, DELIVERED]
+        failureReason:
+          type: ["string", "null"]
+        createdAt:
+          type: string
+          format: date-time
+        sentAt:
+          type: ["string", "null"]
+          format: date-time
+
+    MessageList:
+      type: object
+      required: [messages, total]
+      properties:
+        messages:
+          type: array
+          items:
+            $ref: "#/components/schemas/Message"
+        total:
+          type: integer

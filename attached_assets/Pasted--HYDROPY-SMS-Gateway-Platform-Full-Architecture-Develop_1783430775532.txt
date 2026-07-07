@@ -1,0 +1,629 @@
+# HYDROPY SMS Gateway Platform — Full Architecture & Development Instructions
+
+You are the lead software architect and senior full-stack engineer for this project.
+
+Your responsibility is to build a complete, production-quality SMS Gateway platform called **HYDROPY**.
+
+Do not create random features or files. First understand the complete system architecture, review the existing repository, and then implement features according to this specification.
+
+The goal is to create a platform where Android phones act as SMS gateway devices controlled by a web portal.
+
+---
+
+# PRODUCT OVERVIEW
+
+HYDROPY is a distributed SMS gateway management platform.
+
+The system consists of:
+
+1. Web Dashboard
+2. Backend API Server
+3. PostgreSQL Database
+4. Android Gateway Application
+5. Real-time communication layer
+6. Campaign and message processing system
+
+The Android phone is the SMS sending device.
+
+The backend controls, schedules, tracks, and manages devices.
+
+Architecture:
+
+```
+                 HYDROPY DASHBOARD
+                         |
+                         |
+                   API SERVER
+                         |
+          --------------------------------
+          |                              |
+     PostgreSQL                  WebSocket Server
+          |                              |
+          --------------------------------
+                         |
+                 Android Gateway App
+                         |
+                    Android SMS API
+                         |
+                      SIM CARD
+                         |
+                    Mobile Network
+                         |
+                    Recipient
+```
+
+---
+
+# IMPORTANT DEVELOPMENT RULES
+
+Before writing new code:
+
+1. Inspect the complete repository.
+2. Understand existing structure.
+3. Identify duplicated code.
+4. Identify broken logic.
+5. Identify missing components.
+6. Create an architecture report.
+7. Then implement improvements.
+
+Do not rewrite working code unnecessarily.
+
+Keep the existing stack:
+
+* React
+* TypeScript
+* Express
+* PostgreSQL
+* Drizzle ORM
+* Expo Android App
+* WebSocket
+* pnpm monorepo
+
+---
+
+# REQUIRED PROJECT STRUCTURE
+
+Maintain a clean monorepo.
+
+```
+apps/
+
+ api-server/
+
+ dashboard/
+
+ gateway-app/
+
+
+packages/
+
+ database/
+
+ api-client/
+
+ api-spec/
+
+ shared/
+
+ auth/
+
+ websocket/
+
+ queue/
+
+ scheduler/
+
+ logger/
+
+ config/
+
+
+docs/
+
+ architecture.md
+
+ database.md
+
+ api.md
+
+ mobile.md
+
+ deployment.md
+```
+
+Each module must have only one responsibility.
+
+---
+
+# BACKEND REQUIREMENTS
+
+The API server is the brain of the system.
+
+Responsibilities:
+
+* Authentication
+* Users
+* Devices
+* Campaigns
+* Messages
+* Scheduling
+* Queue management
+* WebSocket communication
+* Reporting
+* Logging
+
+---
+
+# DATABASE DESIGN
+
+Create proper database models.
+
+Required tables:
+
+## Users
+
+Fields:
+
+* id
+* name
+* email
+* password hash
+* role
+* createdAt
+* updatedAt
+
+## Devices
+
+Fields:
+
+* id
+* userId
+* deviceName
+* deviceToken
+* status
+* androidVersion
+* model
+* appVersion
+* battery
+* signal
+* lastHeartbeat
+* createdAt
+
+Device status:
+
+```
+NEW
+PENDING_CONNECTION
+CONNECTED
+ONLINE
+BUSY
+OFFLINE
+BLOCKED
+```
+
+## SIM Cards
+
+Fields:
+
+* id
+* deviceId
+* slot
+* carrier
+* phoneNumber
+* status
+
+## Campaigns
+
+Fields:
+
+* id
+* userId
+* name
+* messageTemplate
+* status
+* totalMessages
+* sent
+* failed
+* createdAt
+
+Campaign status:
+
+```
+DRAFT
+SCHEDULED
+RUNNING
+PAUSED
+COMPLETED
+FAILED
+CANCELLED
+```
+
+## Contacts
+
+Fields:
+
+* id
+* campaignId
+* name
+* phoneNumber
+
+## Messages
+
+Fields:
+
+* id
+* campaignId
+* deviceId
+* recipient
+* message
+* status
+* failureReason
+* createdAt
+* sentAt
+
+Message status:
+
+```
+CREATED
+QUEUED
+ASSIGNED
+SENDING
+SENT
+FAILED
+DELIVERED
+```
+
+---
+
+# DEVICE CONNECTION SYSTEM
+
+Implement QR-based pairing.
+
+Flow:
+
+1. Admin clicks "Add Device".
+2. Server creates:
+
+   * Device ID
+   * Secure token
+   * QR code.
+3. Android app scans QR.
+4. App authenticates.
+5. Device connects through WebSocket.
+6. Device becomes ONLINE.
+
+QR contains:
+
+```
+server URL
+device ID
+authentication token
+```
+
+---
+
+# ANDROID GATEWAY APP
+
+The Android app is a worker.
+
+Responsibilities:
+
+## Connection
+
+* Scan QR
+* Authenticate
+* Maintain WebSocket connection
+* Reconnect automatically
+
+## Heartbeat
+
+Every 30 seconds send:
+
+```
+battery
+charging status
+signal strength
+network
+SIM information
+app version
+device status
+```
+
+## SMS Processing
+
+Receive jobs:
+
+Example:
+
+```
+Message ID:
+12345
+
+Phone:
++919999999999
+
+Text:
+Hello Customer
+```
+
+Send through Android SMS service.
+
+Return:
+
+Success:
+
+```
+status: SENT
+```
+
+Failure:
+
+```
+status: FAILED
+reason:
+```
+
+---
+
+# CAMPAIGN SYSTEM
+
+User workflow:
+
+1. Create campaign.
+2. Upload CSV contacts.
+3. Validate numbers.
+4. Remove duplicates.
+5. Generate message jobs.
+6. Add jobs to queue.
+7. Scheduler assigns jobs to devices.
+8. Devices send SMS.
+9. Track results.
+10. Generate report.
+
+---
+
+# MESSAGE QUEUE SYSTEM
+
+Never send directly.
+
+Required flow:
+
+```
+Campaign
+
+↓
+
+Message Queue
+
+↓
+
+Scheduler
+
+↓
+
+Android Device
+
+↓
+
+SMS
+
+↓
+
+Result
+```
+
+The queue must support:
+
+* Retry
+* Pause
+* Resume
+* Failed messages
+* Priority
+
+---
+
+# DEVICE SCHEDULER
+
+Scheduler chooses devices based on:
+
+* Online status
+* Battery
+* Network
+* Current workload
+* SIM availability
+* Device health
+
+Example:
+
+Healthy device:
+
+```
+Battery 80%
+Online
+Signal strong
+Queue low
+```
+
+gets more jobs.
+
+---
+
+# WEBSOCKET EVENTS
+
+Create a centralized event system.
+
+Events:
+
+```
+device.connected
+
+device.offline
+
+device.heartbeat
+
+device.status
+
+sms.new
+
+sms.sent
+
+sms.failed
+
+campaign.started
+
+campaign.completed
+```
+
+---
+
+# DASHBOARD FEATURES
+
+Create pages:
+
+## Dashboard
+
+Show:
+
+* Total devices
+* Online devices
+* Active campaigns
+* Messages sent
+* Failed messages
+
+## Devices
+
+Features:
+
+* Add device
+* QR connect
+* View status
+* View heartbeat
+* Disconnect device
+
+## Campaigns
+
+Features:
+
+* Create campaign
+* Upload CSV
+* Start
+* Pause
+* Resume
+* Reports
+
+## Messages
+
+Show:
+
+* Status
+* Device
+* Recipient
+* Time
+* Error reason
+
+## Logs
+
+Show:
+
+* Device logs
+* User actions
+* System errors
+
+---
+
+# SECURITY REQUIREMENTS
+
+Implement:
+
+* Secure authentication
+* Password hashing
+* JWT/session handling
+* Device tokens
+* Token revocation
+* Input validation
+* API rate limiting
+* Error handling
+* Audit logs
+
+---
+
+# TESTING REQUIREMENTS
+
+Every module must be tested.
+
+Verify:
+
+## Device
+
+* QR works
+* Device connects
+* Heartbeat works
+* Disconnect detection works
+
+## SMS
+
+* Message creation
+* Queue processing
+* Device assignment
+* Sending
+* Status update
+
+## Campaign
+
+* CSV upload
+* Job creation
+* Completion tracking
+
+---
+
+# DOCUMENTATION REQUIREMENTS
+
+Create:
+
+```
+docs/
+
+architecture.md
+
+database.md
+
+api.md
+
+websocket.md
+
+mobile-app.md
+
+deployment.md
+
+troubleshooting.md
+```
+
+Documentation must explain:
+
+* How system works
+* Data flow
+* APIs
+* Database
+* Device lifecycle
+* Deployment
+
+---
+
+# FINAL GOAL
+
+The final HYDROPY platform should work like this:
+
+1. User opens dashboard.
+2. User downloads Android gateway app.
+3. User connects phone using QR code.
+4. Phone appears online.
+5. User creates SMS campaign.
+6. System creates message jobs.
+7. Scheduler distributes jobs.
+8. Android devices send SMS using SIM cards.
+9. Devices report results.
+10. Dashboard shows live progress and reports.
+
+Build this as a clean, scalable, maintainable platform.
+
+Before making major changes, explain the current state of the project and the proposed improvements.
